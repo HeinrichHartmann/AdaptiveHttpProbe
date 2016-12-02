@@ -1,1 +1,3 @@
-# AdaptiveHttpProber
+# AdaptiveHttpProbe
+
+The adaptive HTTP Probe
