@@ -19,7 +19,7 @@ class MisbehavingRequestHandler(RequestHandler):
 
 if __name__ == '__main__':
     app = Application([
-        (r'/test', MisbehavingRequestHandler, {'p': 0.80}),
+        (r'/test', MisbehavingRequestHandler, {'p': 0.01}),
         (r'/(.*)', StaticFileHandler, {'path': 'static', 'default_filename': 'index.html'})
     ],
     autoreload=True)
