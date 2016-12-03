@@ -15,10 +15,31 @@ It does so by:
 
 3. ? for flapping states.
 
+## The expermintal UI
+
+The experimental UI was written in Tornado and python3. It is recommended to use a virtualenv when running it.
+
+Install the requirements:
+```
+pip install -r requirements.txt
+```
+Then run the probe server:
+```
+python probe.py
+```
+And the simulation server:
+```
+python simulation_server.py
+```
+
+Currently configurations must be done in the code. WiP
+
 
 # TODO
 
 - [x] Make simple bayes model
 - [x] Add transition probability parameter
 - [ ] Gather real-world data
-- [ ] Make a simulation of partial failure modes
+- [x] Make a simulation of partial failure modes
+- [ ] Make the parameters configurable in the UI
+- [ ] Alert on transition to "bad" state
