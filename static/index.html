@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    <title>Adaptive HTTP Probe</title>
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+    <!-- Optional theme -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+    <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
+    <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+
+    <style>
+
+    </style>
+</head>
+<body>
+    <h1>Adaptive HTTP Prober</h1>
+
+    <div class="container">
+        <canvas id="chart" height="75"></canvas>
+        <canvas id="convergenceChart" height="75"></canvas>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.4.0/Chart.bundle.min.js"  charset="utf-8"></script>
+    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+    <!-- Latest compiled and minified JavaScript -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+
+    <script>
+        var ctx = $("#chart");
+        var labels = [...Array(101).keys()];
+        var myChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    backgroundColor: 'rgba(100, 149, 237, 1)',
+                    label: 'Distribution',
+                    data: Array(101),
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    yAxes: [{
+                        ticks: {
+                            beginAtZero:true
+                        }
+                    }]
+                }
+            }
+        });
+
+        var ctx2 = $("#convergenceChart");
+        var convergenceChart = new Chart(ctx2, {
+           type: 'line',
+            data: {
+                datasets: [{
+                    label: 'stddev',
+                    fill: false,
+                    data: []
+                }]
+            },
+            options: {
+                scales: {
+                    xAxes: [
+                        {
+                            type: 'linear',
+                            position: 'bottom',
+                            label: 'Iteration'
+                        }
+                    ]
+                }
+            }
+        });
+
+        var maxDataRetention = 1000;
+        var trimSteps = Math.ceil(maxDataRetention / 10);
+        function render(data) {
+            myChart.data.datasets[0].data = data['vec'];
+            myChart.update();
+
+            var stddevSeries = convergenceChart.data.datasets[0].data;
+            if (stddevSeries.length > 0 && data['iteration'] < stddevSeries[stddevSeries.length - 1]['x']) { // reset;
+                convergenceChart.data.datasets[0].data = [{x: data['iteration'], y: data['stddev']}];
+                convergenceChart.reset();
+                return;
+            }
+
+            // trim old data
+            if (!(stddevSeries.length % trimSteps) && stddevSeries.length > maxDataRetention) {
+                stddevSeries = stddevSeries.slice(stddevSeries.length - maxDataRetention);
+            }
+
+            stddevSeries.push({x: data['iteration'], y: data['stddev']});
+            convergenceChart.data.datasets[0].data = stddevSeries;
+
+            convergenceChart.update();
+        }
+
+
+        (function worker() {
+            $.ajax({
+                url: '/data',
+                success: function(data) {
+                   render(data);
+                },
+                complete: function() {
+                    // Schedule the next request when the current one's complete
+                    setTimeout(worker, 200);
+                }
+            });
+        })();
+
+
+    </script>
+
+</body>
+</html>
